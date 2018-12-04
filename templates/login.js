@@ -1,5 +1,4 @@
 const html = require('choo/html')
-// const fetch = ('node-fetch')
 
 module.exports = function() {
   return html `
@@ -8,13 +7,13 @@ module.exports = function() {
         <img class="mb-4" src="../assets/icon.png" alt="" width="72" height="72">
         <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
         <label for="PSAdomain" class="sr-only">Domain</label>
-        <input name="domain" value="http://192.168.1.163:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
+        <input name="domain" value="http://localhost:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
 
         <label for="userName" class="sr-only">User Name</label>
-        <input name="username" value="terra" id="userName" class="form-control" placeholder="User Name" required>
+        <input name="username" value="oliv" id="userName" class="form-control" placeholder="User Name" required>
 
         <label for="inputPassword" class="sr-only">Password</label>
-        <input type="password" name="password" value="rhizome" id="inputPassword" class="form-control" placeholder="Password" required>
+        <input type="password" name="password" value="toor" id="inputPassword" class="form-control" placeholder="Password" required>
 
         <!--<a href="/dash">--><button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button><!--</a>-->
         <p class="mt-5 mb-3 text-muted">Copyright Agorama 2018</p>
@@ -24,8 +23,10 @@ module.exports = function() {
 
   function handleEvent(event) {
       event.preventDefault()
-      var xhr = new XMLHttpRequest()
+      // var xhr = new XMLHttpRequest()
+      var baseDomain = event.target.domain.value
       var domain = event.target.domain.value + '/v1/accounts/login'
+      var psa = event.target.domain.value + '/.well-known/psa'
       var login = JSON.stringify({
         "username": event.target.username.value,
         "password": event.target.password.value
@@ -33,8 +34,25 @@ module.exports = function() {
       // xhr.open("POST", domain, true)
       // xhr.setRequestHeader("Content-Type", "application/json")
 
-      console.log(login)
-      console.log(JSON.parse(login))
+      // console.log(login)
+      // console.log(JSON.parse(login))
+
+      // xhr.open('GET', psa)
+      // xhr.send()
+      //
+      // if (xhr.readyState === 4) {
+      //   console.log(xhr.responseText)
+      // }
+
+      fetch(psa).then(function(res, err) {
+          if (!res.ok) {
+            console.error(err)
+          }
+          console.log(res)
+          return res.json()
+      })
+
+
       // var blob = new Blob([JSON.stringify({
       //   username: event.target.username.value,
       //   password: event.target.password.value
