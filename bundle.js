@@ -2361,6 +2361,8 @@ module.exports = function(state) {
 const html = require('choo/html')
 
 module.exports = function() {
+  var xhr = new XMLHttpRequest()
+
   return html `
     <body class="text-center">
       <form class="form-signin" onsubmit=${handleEvent}>
@@ -2383,7 +2385,6 @@ module.exports = function() {
 
   function handleEvent(event) {
       event.preventDefault()
-      // var xhr = new XMLHttpRequest()
       var baseDomain = event.target.domain.value
       var domain = event.target.domain.value + '/v1/accounts/login'
       var psa = event.target.domain.value + '/.well-known/psa'
@@ -2391,32 +2392,16 @@ module.exports = function() {
         "username": event.target.username.value,
         "password": event.target.password.value
       })
-      // xhr.open("POST", domain, true)
-      // xhr.setRequestHeader("Content-Type", "application/json")
 
-      // console.log(login)
-      // console.log(JSON.parse(login))
+      makeRequest(psa)
 
-      // xhr.open('GET', psa)
-      // xhr.send()
-      //
-      // if (xhr.readyState === 4) {
-      //   console.log(xhr.responseText)
-      // }
-
-      fetch(psa).then(function(res, err) {
-          if (!res.ok) {
-            console.error(err)
-          }
-          console.log(res)
-          return res.json()
-      })
-
-
-      // var blob = new Blob([JSON.stringify({
-      //   username: event.target.username.value,
-      //   password: event.target.password.value
-      // }), {type: 'application/json'}])
+      // fetch(psa).then(function(res, err) {
+      //     if (!res.ok) {
+      //       console.error(err)
+      //     }
+      //     console.log(res)
+      //     return res.json()
+      // })
 
       // console.log(domain)
       // console.log(login)
@@ -2452,6 +2437,32 @@ module.exports = function() {
       // console.log(myRequest.body)
       // console.log(myRequest.headers)
 
+ }
+
+ function makeRequest(url) {
+   xhr.onreadystatechange = respondMethod
+   xhr.open('GET', url)
+   xhr.send()
+ }
+
+ function respondMethod() {
+   if (xhr.readyState === 4) {
+     if (xhr.status === 200) {
+       resSuccess(xhr.responseText)
+     } else {
+       resError()
+     }
+   }
+ }
+
+ // handle XHR success
+ function resSuccess(responseText) {
+   var response = JSON.parse(responseText)
+   console.log(response)
+ }
+
+ function resError() {
+   console.log("Error, something has gone wrong.")
  }
 
 }
