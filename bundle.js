@@ -2361,6 +2361,7 @@ module.exports = function(state) {
 const html = require('choo/html')
 
 module.exports = function() {
+
   var xhr = new XMLHttpRequest()
 
   return html `
@@ -2389,64 +2390,30 @@ module.exports = function() {
       var domain = event.target.domain.value + '/v1/accounts/login'
       var psa = event.target.domain.value + '/.well-known/psa'
       var login = JSON.stringify({
-        "username": event.target.username.value,
-        "password": event.target.password.value
-      })
+          username: event.target.username.value,
+          password: event.target.password.value
+        }, null, 2)
 
-      makeRequest(psa)
-
-      // fetch(psa).then(function(res, err) {
-      //     if (!res.ok) {
-      //       console.error(err)
-      //     }
-      //     console.log(res)
-      //     return res.json()
-      // })
-
-      // console.log(domain)
-      // console.log(login)
-      // console.log(login.username)
-      // console.log(login.password)
-      // console.log(blob.login)
-
-      // const myRequest = new Request(domain, {
-      //   method: 'POST',
-      //   mode: 'no-cors',
-      //   body: '{"username": "terra"}',
-      //   headers: {'Content-Type': 'application/json'}
-      // })
-
-      // fetch(domain, {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     'username': event.target.username.value,
-      //     'password': event.target.password.value
-      //    }),
-      //   headers: {'Content-Type': 'application/json'},
-      //   mode: 'no-cors'
-      // }).then(function(res, err) {
-      //   if (!res) {
-      //     console.error(err)
-      //   }
-      //   return res.json
-      //   console.log(res)
-      // })
-
-      // console.log(myRequest.method)
-      // console.log(myRequest.mode)
-      // console.log(myRequest.body)
-      // console.log(myRequest.headers)
+      console.log(login)
+      makeRequest(domain, login)
 
  }
 
- function makeRequest(url) {
-   xhr.onreadystatechange = respondMethod
-   xhr.open('GET', url)
-   xhr.send()
+ // function makeRequest(url) {
+ //   xhr.onreadystatechange = responseMethod
+ //   xhr.open('GET', url)
+ //   xhr.send()
+ // }
+ function makeRequest(url, form) {
+   xhr.onreadystatechange = responseMethod
+   xhr.open('POST', url)
+   xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
+   xhr.send(form)
  }
 
- function respondMethod() {
+ function responseMethod() {
    if (xhr.readyState === 4) {
+     console.log(xhr.responseText)
      if (xhr.status === 200) {
        resSuccess(xhr.responseText)
      } else {
@@ -2455,14 +2422,13 @@ module.exports = function() {
    }
  }
 
- // handle XHR success
  function resSuccess(responseText) {
    var response = JSON.parse(responseText)
    console.log(response)
  }
 
  function resError() {
-   console.log("Error, something has gone wrong.")
+   console.log("Something has appeared to have gone wrong.")
  }
 
 }
