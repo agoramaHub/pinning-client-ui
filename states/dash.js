@@ -1,11 +1,19 @@
 const html = require('choo/html')
 
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
+const navTop = require('./components/navTop.js')
+const navSide = require('./components/navSide.js')
+
 
 module.exports = function(state) {
+  var xhr = new XMLHttpRequest()
+  var authSession = "Bearer " + state.login
+  var domain = state.hostname + '/v1/dats'
+  console.log(domain)
+
+  // xhr.open('GET', )
+
   return html `
-    <body>
+    <body onload="${makeRequest(domain, authSession)}">
 
     ${navTop(state)}
 
@@ -17,9 +25,7 @@ module.exports = function(state) {
 <!-- Main -->
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
 
-
-
-        <h2>Account Information</h2>
+        <h2>Dashboard Overview</h2>
         <div class="table-responsive">
           <table class="table table-striped table-sm">
             <thead>
@@ -62,4 +68,32 @@ module.exports = function(state) {
 
     </body>
   `
+
+  function makeRequest(url, key) {
+    xhr.onreadystatechange = responseMethod
+    xhr.open('GET', url)
+    xhr.setRequestHeader("Authorization", key)
+    xhr.send()
+  }
+
+  function responseMethod() {
+    if (xhr.readyState === 4) {
+      console.log(xhr.responseText)
+      if (xhr.status === 200) {
+        resSuccess(xhr.responseText)
+      } else {
+        resError()
+      }
+    }
+  }
+
+  function resSuccess(responseText) {
+    var response = JSON.parse(responseText)
+    var key = response.sessionToken
+    console.log(response)
+  }
+
+  function resError() {
+    console.log("Something has appeared to have gone wrong.")
+  }
 }

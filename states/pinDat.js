@@ -1,7 +1,7 @@
 const html = require('choo/html')
 
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
+const navTop = require('./components/navTop.js')
+const navSide = require('./components/navSide.js')
 
 module.exports = function(state) {
   return html `

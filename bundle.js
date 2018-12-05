@@ -1,80 +1,36 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-const html = require('choo/html')
-
-module.exports = navSide
-
-function navSide(state) {
-  return html `
-      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-        <div class="sidebar-sticky">
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link active" href="/dash">
-                <span data-feather="home"></span>
-                Dashboard <span class="sr-only">(current)</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dash/account">
-                <span data-feather="file"></span>
-                Account
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dash/pin">
-                <span data-feather="shopping-cart"></span>
-                Pin Dat
-              </a>
-            </li>
-          </ul>
-        </div>
-      </nav>
-  `
-}
-
-},{"choo/html":5}],2:[function(require,module,exports){
-const html = require('choo/html')
-
-module.exports = navTop
-
-function navTop(state, emit) {
-  return html `
-      <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PSA Pinning Service</a>
-
-      <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-          <a class="nav-link" href="/">Sign out</a>
-        </li>
-      </ul>
-    </nav>
-  `
-}
-
-},{"choo/html":5}],3:[function(require,module,exports){
 const choo = require('choo')
 const html = require('choo/html')
 
-const login = require('./templates/login.js')
-const dash = require('./templates/dash.js')
-const account = require('./templates/account.js')
-const pinDat = require('./templates/pinDat.js')
-
+const login = require('./states/login')
+const dash = require('./states/dash')
 
 const app = choo()
 
-// app.use(function(state, emitter) {
-//   state.dash =
-// })
+app.use(function(state, emitter) {
+  state.login =
+  state.hostname =
+
+  emitter.on('key', function(data) {
+    state.login = data
+    console.log("Authenticated! Bearer " + state.login)
+    emitter.emit('pushState', '/dash')
+  })
+
+  emitter.on('hostname', function(data) {
+    state.hostname = data
+    console.log(state.hostname)
+    emitter.emit('render')
+  })
+})
 
 app.route('/', login)
 app.route('/dash', dash)
-app.route('/dash/account', account)
-app.route('/dash/pin', pinDat)
+
 
 app.mount('body')
 
-},{"./templates/account.js":33,"./templates/dash.js":34,"./templates/login.js":35,"./templates/pinDat.js":36,"choo":6,"choo/html":5}],4:[function(require,module,exports){
+},{"./states/dash":33,"./states/login":34,"choo":4,"choo/html":3}],2:[function(require,module,exports){
 var assert = require('assert')
 var LRU = require('nanolru')
 
@@ -117,10 +73,10 @@ function newCall (Cls) {
   return new (Cls.bind.apply(Cls, arguments)) // eslint-disable-line
 }
 
-},{"assert":10,"nanolru":18}],5:[function(require,module,exports){
+},{"assert":8,"nanolru":16}],3:[function(require,module,exports){
 module.exports = require('nanohtml')
 
-},{"nanohtml":15}],6:[function(require,module,exports){
+},{"nanohtml":13}],4:[function(require,module,exports){
 var scrollToAnchor = require('scroll-to-anchor')
 var documentReady = require('document-ready')
 var nanotiming = require('nanotiming')
@@ -393,7 +349,7 @@ Choo.prototype._setCache = function (state) {
   }
 }
 
-},{"./component/cache":4,"assert":10,"document-ready":7,"nanobus":11,"nanohref":12,"nanomorph":19,"nanoquery":22,"nanoraf":23,"nanorouter":24,"nanotiming":26,"scroll-to-anchor":28,"xtend":31}],7:[function(require,module,exports){
+},{"./component/cache":2,"assert":8,"document-ready":5,"nanobus":9,"nanohref":10,"nanomorph":17,"nanoquery":20,"nanoraf":21,"nanorouter":22,"nanotiming":24,"scroll-to-anchor":26,"xtend":29}],5:[function(require,module,exports){
 'use strict'
 
 var assert = require('assert')
@@ -412,7 +368,7 @@ function ready (callback) {
   })
 }
 
-},{"assert":37}],8:[function(require,module,exports){
+},{"assert":35}],6:[function(require,module,exports){
 module.exports = attributeToProperty
 
 var transform = {
@@ -433,7 +389,7 @@ function attributeToProperty (h) {
   }
 }
 
-},{}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var attrToProp = require('hyperscript-attribute-to-property')
 
 var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
@@ -729,7 +685,7 @@ var closeRE = RegExp('^(' + [
 ].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
 function selfClosing (tag) { return closeRE.test(tag) }
 
-},{"hyperscript-attribute-to-property":8}],10:[function(require,module,exports){
+},{"hyperscript-attribute-to-property":6}],8:[function(require,module,exports){
 assert.notEqual = notEqual
 assert.notOk = notOk
 assert.equal = equal
@@ -753,7 +709,7 @@ function assert (t, m) {
   if (!t) throw new Error(m || 'AssertionError')
 }
 
-},{}],11:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var splice = require('remove-array-items')
 var nanotiming = require('nanotiming')
 var assert = require('assert')
@@ -917,7 +873,7 @@ Nanobus.prototype._emit = function (arr, eventName, data, uuid) {
   }
 }
 
-},{"assert":10,"nanotiming":26,"remove-array-items":27}],12:[function(require,module,exports){
+},{"assert":8,"nanotiming":24,"remove-array-items":25}],10:[function(require,module,exports){
 var assert = require('assert')
 
 var safeExternalLink = /(noopener|noreferrer) (noopener|noreferrer)/
@@ -962,7 +918,7 @@ function href (cb, root) {
   })
 }
 
-},{"assert":10}],13:[function(require,module,exports){
+},{"assert":8}],11:[function(require,module,exports){
 var trailingNewlineRegex = /\n[\s]+$/
 var leadingNewlineRegex = /^\n[\s]+/
 var trailingSpaceRegex = /[\s]+$/
@@ -1095,7 +1051,7 @@ module.exports = function appendChild (el, childs) {
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = [
   'async', 'autofocus', 'autoplay', 'checked', 'controls', 'default',
   'defaultchecked', 'defer', 'disabled', 'formnovalidate', 'hidden',
@@ -1103,7 +1059,7 @@ module.exports = [
   'readonly', 'required', 'reversed', 'selected'
 ]
 
-},{}],15:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var hyperx = require('hyperx')
 var appendChild = require('./append-child')
 var SVG_TAGS = require('./svg-tags')
@@ -1186,12 +1142,12 @@ module.exports = hyperx(nanoHtmlCreateElement, {comments: true})
 module.exports.default = module.exports
 module.exports.createElement = nanoHtmlCreateElement
 
-},{"./append-child":13,"./bool-props":14,"./direct-props":16,"./svg-tags":17,"hyperx":9}],16:[function(require,module,exports){
+},{"./append-child":11,"./bool-props":12,"./direct-props":14,"./svg-tags":15,"hyperx":7}],14:[function(require,module,exports){
 module.exports = [
   'indeterminate'
 ]
 
-},{}],17:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = [
   'svg', 'altGlyph', 'altGlyphDef', 'altGlyphItem', 'animate', 'animateColor',
   'animateMotion', 'animateTransform', 'circle', 'clipPath', 'color-profile',
@@ -1209,7 +1165,7 @@ module.exports = [
   'tspan', 'use', 'view', 'vkern'
 ]
 
-},{}],18:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports = LRU
 
 function LRU (opts) {
@@ -1347,7 +1303,7 @@ LRU.prototype.evict = function () {
   this.remove(this.tail)
 }
 
-},{}],19:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var assert = require('assert')
 var morph = require('./lib/morph')
 
@@ -1498,7 +1454,7 @@ function same (a, b) {
   return false
 }
 
-},{"./lib/morph":21,"assert":10}],20:[function(require,module,exports){
+},{"./lib/morph":19,"assert":8}],18:[function(require,module,exports){
 module.exports = [
   // attribute events (can be set with attributes)
   'onclick',
@@ -1542,7 +1498,7 @@ module.exports = [
   'onfocusout'
 ]
 
-},{}],21:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var events = require('./events')
 var eventsLength = events.length
 
@@ -1708,7 +1664,7 @@ function updateAttribute (newNode, oldNode, name) {
   }
 }
 
-},{"./events":20}],22:[function(require,module,exports){
+},{"./events":18}],20:[function(require,module,exports){
 var reg = /([^?=&]+)(=([^&]*))?/g
 var assert = require('assert')
 
@@ -1725,7 +1681,7 @@ function qs (url) {
   return obj
 }
 
-},{"assert":10}],23:[function(require,module,exports){
+},{"assert":8}],21:[function(require,module,exports){
 'use strict'
 
 var assert = require('assert')
@@ -1762,7 +1718,7 @@ function nanoraf (render, raf) {
   }
 }
 
-},{"assert":10}],24:[function(require,module,exports){
+},{"assert":8}],22:[function(require,module,exports){
 var assert = require('assert')
 var wayfarer = require('wayfarer')
 
@@ -1818,7 +1774,7 @@ function pathname (routename, isElectron) {
   return decodeURI(routename.replace(suffix, '').replace(normalize, '/'))
 }
 
-},{"assert":10,"wayfarer":29}],25:[function(require,module,exports){
+},{"assert":8,"wayfarer":27}],23:[function(require,module,exports){
 var assert = require('assert')
 
 var hasWindow = typeof window !== 'undefined'
@@ -1875,7 +1831,7 @@ NanoScheduler.prototype.setTimeout = function (cb) {
 
 module.exports = createScheduler
 
-},{"assert":10}],26:[function(require,module,exports){
+},{"assert":8}],24:[function(require,module,exports){
 var scheduler = require('nanoscheduler')()
 var assert = require('assert')
 
@@ -1925,7 +1881,7 @@ function noop (cb) {
   }
 }
 
-},{"assert":10,"nanoscheduler":25}],27:[function(require,module,exports){
+},{"assert":8,"nanoscheduler":23}],25:[function(require,module,exports){
 'use strict'
 
 /**
@@ -1955,7 +1911,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
   arr.length = len
 }
 
-},{}],28:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = scrollToAnchor
 
 function scrollToAnchor (anchor, options) {
@@ -1967,7 +1923,7 @@ function scrollToAnchor (anchor, options) {
   }
 }
 
-},{}],29:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var assert = require('assert')
 var trie = require('./trie')
 
@@ -2046,7 +2002,7 @@ function Wayfarer (dft) {
   }
 }
 
-},{"./trie":30,"assert":37}],30:[function(require,module,exports){
+},{"./trie":28,"assert":35}],28:[function(require,module,exports){
 var mutate = require('xtend/mutable')
 var assert = require('assert')
 var xtend = require('xtend')
@@ -2184,7 +2140,7 @@ Trie.prototype.mount = function (route, trie) {
   }
 }
 
-},{"assert":37,"xtend":31,"xtend/mutable":32}],31:[function(require,module,exports){
+},{"assert":35,"xtend":29,"xtend/mutable":30}],29:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -2205,7 +2161,7 @@ function extend() {
     return target
 }
 
-},{}],32:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -2224,83 +2180,76 @@ function extend(target) {
     return target
 }
 
-},{}],33:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 const html = require('choo/html')
 
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
+module.exports = navSide
 
-module.exports = function(state) {
+function navSide(state) {
   return html `
-    <body>
-
-    ${navTop(state)}
-
-    <div class="container-fluid">
-      <div class="row">
-
-        ${navSide(state)}
-
-<!-- Main -->
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-
-
-
-        <h2>Account Information</h2>
-        <div class="table-responsive">
-          <table class="table table-striped table-sm">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Header</th>
-                <th>Header</th>
-                <th>Header</th>
-                <th>Header</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1,001</td>
-                <td>Lorem</td>
-                <td>ipsum</td>
-                <td>dolor</td>
-                <td>sit</td>
-              </tr>
-              <tr>
-                <td>1,002</td>
-                <td>amet</td>
-                <td>consectetur</td>
-                <td>adipiscing</td>
-                <td>elit</td>
-              </tr>
-
-            </tbody>
-          </table>
-          </div>
-        </main>
-<!-- /Main -->
-
-      </div>
-    </div>
-
-    <script src="./js/jquery-slim.min.js"></script>
-    <script src="./js/jquery-3.3.1.slim.min.js"></script>
-    <script src="./js/popper.min.js"></script>
-
-    </body>
+      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+        <div class="sidebar-sticky">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="/dash">
+                <span data-feather="home"></span>
+                Dashboard <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dash/account">
+                <span data-feather="file"></span>
+                Account
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dash/pin">
+                <span data-feather="shopping-cart"></span>
+                Pin Dat
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
   `
 }
 
-},{"../components/navSide.js":1,"../components/navTop.js":2,"choo/html":5}],34:[function(require,module,exports){
+},{"choo/html":3}],32:[function(require,module,exports){
 const html = require('choo/html')
 
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
+module.exports = navTop
+
+function navTop(state, emit) {
+  return html `
+      <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PSA Pinning Service</a>
+
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="/">Sign out</a>
+        </li>
+      </ul>
+    </nav>
+  `
+}
+
+},{"choo/html":3}],33:[function(require,module,exports){
+const html = require('choo/html')
+
+const navTop = require('./components/navTop.js')
+const navSide = require('./components/navSide.js')
 
 
 module.exports = function(state) {
+  var xhr = new XMLHttpRequest()
+  var authSession = "Bearer " + state.login
+  var domain = state.hostname + '/v1/dats'
+  console.log(domain)
+
+  // xhr.open('GET', )
+
   return html `
-    <body>
+    <body onload="${makeRequest(domain, authSession)}">
 
     ${navTop(state)}
 
@@ -2355,12 +2304,40 @@ module.exports = function(state) {
 
     </body>
   `
+
+  function makeRequest(url, key) {
+    xhr.onreadystatechange = responseMethod
+    xhr.open('GET', url)
+    xhr.setRequestHeader("Authorization", key)
+    xhr.send()
+  }
+
+  function responseMethod() {
+    if (xhr.readyState === 4) {
+      console.log(xhr.responseText)
+      if (xhr.status === 200) {
+        resSuccess(xhr.responseText)
+      } else {
+        resError()
+      }
+    }
+  }
+
+  function resSuccess(responseText) {
+    var response = JSON.parse(responseText)
+    var key = response.sessionToken
+    console.log(response)
+  }
+
+  function resError() {
+    console.log("Something has appeared to have gone wrong.")
+  }
 }
 
-},{"../components/navSide.js":1,"../components/navTop.js":2,"choo/html":5}],35:[function(require,module,exports){
+},{"./components/navSide.js":31,"./components/navTop.js":32,"choo/html":3}],34:[function(require,module,exports){
 const html = require('choo/html')
 
-module.exports = function() {
+module.exports = function(state, emit) {
 
   var xhr = new XMLHttpRequest()
 
@@ -2369,6 +2346,7 @@ module.exports = function() {
       <form class="form-signin" onsubmit=${handleEvent}>
         <img class="mb-4" src="../assets/icon.png" alt="" width="72" height="72">
         <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+
         <label for="PSAdomain" class="sr-only">Domain</label>
         <input name="domain" value="http://localhost:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
 
@@ -2384,9 +2362,10 @@ module.exports = function() {
     </body>
   `
 
-  function handleEvent(event) {
+   function handleEvent(event) {
       event.preventDefault()
       var baseDomain = event.target.domain.value
+      emit('hostname', baseDomain)
       var domain = event.target.domain.value + '/v1/accounts/login'
       var psa = event.target.domain.value + '/.well-known/psa'
       var login = JSON.stringify({
@@ -2396,88 +2375,41 @@ module.exports = function() {
 
       console.log(login)
       makeRequest(domain, login)
+   }
 
- }
+   function makeRequest(url, form) {
+     xhr.onreadystatechange = responseMethod
+     xhr.open('POST', url)
+     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
+     xhr.send(form)
+   }
 
- // function makeRequest(url) {
- //   xhr.onreadystatechange = responseMethod
- //   xhr.open('GET', url)
- //   xhr.send()
- // }
- function makeRequest(url, form) {
-   xhr.onreadystatechange = responseMethod
-   xhr.open('POST', url)
-   xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
-   xhr.send(form)
- }
-
- function responseMethod() {
-   if (xhr.readyState === 4) {
-     console.log(xhr.responseText)
-     if (xhr.status === 200) {
-       resSuccess(xhr.responseText)
-     } else {
-       resError()
+   function responseMethod() {
+     if (xhr.readyState === 4) {
+       console.log(xhr.responseText)
+       if (xhr.status === 200) {
+         resSuccess(xhr.responseText)
+       } else {
+         resError()
+       }
      }
    }
- }
 
- function resSuccess(responseText) {
-   var response = JSON.parse(responseText)
-   console.log(response)
- }
+   function resSuccess(responseText) {
+     var response = JSON.parse(responseText)
+     var key = response.sessionToken
+     console.log(response)
+     console.log(response.sessionToken)
+     emit('key', response.sessionToken)
+   }
 
- function resError() {
-   console.log("Something has appeared to have gone wrong.")
- }
+   function resError() {
+     console.log("Something has appeared to have gone wrong.")
+   }
 
 }
 
-},{"choo/html":5}],36:[function(require,module,exports){
-const html = require('choo/html')
-
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
-
-module.exports = function(state) {
-  return html `
-    <body>
-
-    ${navTop(state)}
-
-    <div class="container-fluid">
-      <div class="row">
-
-        ${navSide(state)}
-
-<!-- Main -->
-        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-
-        <h2>Pin New Dat Archive</h2>
-        <form>
-          <div class="form-group">
-            <input type="text" class="form-control mb-1" id="url" placeholder="Dat URL">
-
-            <input type="text" class="form-control mb-1" id="url-name" placeholder="Dat Name">
-
-            <input type="text" class="form-control mb-1" id="domain" placeholder="Domain">
-          </div>
-        </form>
-        </main>
-<!-- /Main -->
-
-      </div>
-    </div>
-
-    <script src="./js/jquery-slim.min.js"></script>
-    <script src="./js/jquery-3.3.1.slim.min.js"></script>
-    <script src="./js/popper.min.js"></script>
-
-    </body>
-  `
-}
-
-},{"../components/navSide.js":1,"../components/navTop.js":2,"choo/html":5}],37:[function(require,module,exports){
+},{"choo/html":3}],35:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -2971,7 +2903,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util/":40}],38:[function(require,module,exports){
+},{"util/":38}],36:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2996,14 +2928,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],39:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],40:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -3593,7 +3525,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":39,"_process":41,"inherits":38}],41:[function(require,module,exports){
+},{"./support/isBuffer":37,"_process":39,"inherits":36}],39:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -3779,4 +3711,4 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}]},{},[3]);
+},{}]},{},[1]);

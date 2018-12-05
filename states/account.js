@@ -1,8 +1,7 @@
 const html = require('choo/html')
 
-const navTop = require('../components/navTop.js')
-const navSide = require('../components/navSide.js')
-
+const navTop = require('./components/navTop.js')
+const navSide = require('./components/navSide.js')
 
 module.exports = function(state) {
   return html `
@@ -18,7 +17,9 @@ module.exports = function(state) {
 <!-- Main -->
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
 
-        <h2>Dashboard Overview</h2>
+
+
+        <h2>Account Information</h2>
         <div class="table-responsive">
           <table class="table table-striped table-sm">
             <thead>
