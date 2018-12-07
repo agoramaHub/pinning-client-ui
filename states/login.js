@@ -19,7 +19,7 @@ module.exports = function(state, emit) {
         <label for="inputPassword" class="sr-only">Password</label>
         <input type="password" name="password" value="toor" id="inputPassword" class="form-control" placeholder="Password" required>
 
-        <!--<a href="/dash">--><button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button><!--</a>-->
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
         <p class="mt-5 mb-3 text-muted">Copyright Agorama 2018</p>
       </form>
     </body>
@@ -29,6 +29,7 @@ module.exports = function(state, emit) {
       event.preventDefault()
       var baseDomain = event.target.domain.value
       emit('hostname', baseDomain)
+      var account = event.target.domain.value + '/v1/accounts/account'
       var domain = event.target.domain.value + '/v1/accounts/login'
       var psa = event.target.domain.value + '/.well-known/psa'
       var login = JSON.stringify({
@@ -36,7 +37,6 @@ module.exports = function(state, emit) {
           password: event.target.password.value
         }, null, 2)
 
-      console.log(login)
       makeRequest(domain, login)
    }
 
@@ -48,21 +48,16 @@ module.exports = function(state, emit) {
    }
 
    function responseMethod() {
-     if (xhr.readyState === 4) {
-       console.log(xhr.responseText)
-       if (xhr.status === 200) {
+     if (xhr.readyState === 4 && xhr.status === 200) {
          resSuccess(xhr.responseText)
        } else {
          resError()
        }
-     }
    }
 
    function resSuccess(responseText) {
      var response = JSON.parse(responseText)
-     var key = response.sessionToken
-     console.log(response)
-     console.log(response.sessionToken)
+
      emit('key', response.sessionToken)
    }
 

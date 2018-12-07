@@ -1,36 +1,57 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+/*
+* Current state of web app is semi functional. Currently in the process of completing login
+* to first initial request to logout functionality. About 75% done.
+*/
 const choo = require('choo')
 const html = require('choo/html')
 
 const login = require('./states/login')
-const dash = require('./states/dash')
+const main = require('./states/main')
 
 const app = choo()
+var xhr = new XMLHttpRequest()
 
 app.use(function(state, emitter) {
   state.login =
   state.hostname =
-
-  emitter.on('key', function(data) {
-    state.login = data
-    console.log("Authenticated! Bearer " + state.login)
-    emitter.emit('pushState', '/dash')
-  })
+  state.serverName =
 
   emitter.on('hostname', function(data) {
     state.hostname = data
-    console.log(state.hostname)
+
+    emitter.on('key', function(data) {
+      state.login = 'Bearer ' + data
+
+      emitter.emit('pushState', '/main')
+    })
+  })
+
+  emitter.on('serverName', function(data) {
+    state.serverName = data
+    console.log(state.serverName)
     emitter.emit('render')
+  })
+
+  emitter.on('logout', function() {
+    state.login =
+    state.hostname =
+    state.serverName =
+    emitter.emit('pushState', '/')
   })
 })
 
 app.route('/', login)
-app.route('/dash', dash)
+app.route('/main', main)
 
 
 app.mount('body')
 
-},{"./states/dash":33,"./states/login":34,"choo":4,"choo/html":3}],2:[function(require,module,exports){
+/*
+
+*/
+
+},{"./states/login":31,"./states/main":32,"choo":4,"choo/html":3}],2:[function(require,module,exports){
 var assert = require('assert')
 var LRU = require('nanolru')
 
@@ -2183,75 +2204,97 @@ function extend(target) {
 },{}],31:[function(require,module,exports){
 const html = require('choo/html')
 
-module.exports = navSide
+module.exports = function(state, emit) {
 
-function navSide(state) {
+  var xhr = new XMLHttpRequest()
+
   return html `
-      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-        <div class="sidebar-sticky">
-          <ul class="nav flex-column">
-            <li class="nav-item">
-              <a class="nav-link active" href="/dash">
-                <span data-feather="home"></span>
-                Dashboard <span class="sr-only">(current)</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dash/account">
-                <span data-feather="file"></span>
-                Account
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dash/pin">
-                <span data-feather="shopping-cart"></span>
-                Pin Dat
-              </a>
-            </li>
-          </ul>
-        </div>
-      </nav>
+    <body class="text-center">
+      <form class="form-signin" onsubmit=${handleEvent}>
+        <img class="mb-4" src="../assets/icon.png" alt="" width="72" height="72">
+        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+
+        <label for="PSAdomain" class="sr-only">Domain</label>
+        <input name="domain" value="http://localhost:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
+
+        <label for="userName" class="sr-only">User Name</label>
+        <input name="username" value="oliv" id="userName" class="form-control" placeholder="User Name" required>
+
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" name="password" value="toor" id="inputPassword" class="form-control" placeholder="Password" required>
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <p class="mt-5 mb-3 text-muted">Copyright Agorama 2018</p>
+      </form>
+    </body>
   `
+
+   function handleEvent(event) {
+      event.preventDefault()
+      var baseDomain = event.target.domain.value
+      emit('hostname', baseDomain)
+      var account = event.target.domain.value + '/v1/accounts/account'
+      var domain = event.target.domain.value + '/v1/accounts/login'
+      var psa = event.target.domain.value + '/.well-known/psa'
+      var login = JSON.stringify({
+          username: event.target.username.value,
+          password: event.target.password.value
+        }, null, 2)
+
+      makeRequest(domain, login)
+   }
+
+   function makeRequest(url, form) {
+     xhr.onreadystatechange = responseMethod
+     xhr.open('POST', url)
+     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
+     xhr.send(form)
+   }
+
+   function responseMethod() {
+     if (xhr.readyState === 4 && xhr.status === 200) {
+         resSuccess(xhr.responseText)
+       } else {
+         resError()
+       }
+   }
+
+   function resSuccess(responseText) {
+     var response = JSON.parse(responseText)
+
+     emit('key', response.sessionToken)
+   }
+
+   function resError() {
+     console.log("Something has appeared to have gone wrong.")
+   }
+
 }
 
 },{"choo/html":3}],32:[function(require,module,exports){
+/*
+* Current state of though is to turn main into a statemachine that generate the requested content within
+* main anchour tags. This is mean that the user is only on two pages technically: login and main. The rest
+* are state renders after an AJAX request from the pinning service logged into.
+* The main problem currently right now for the dash section is that the request functions are being fired
+* Automatically when the page is rendered.
+* CURRENT ACTION: research the autofiring of onclick events on front end systems like React (and by consequence
+* Choo js). Once fixed, second step is to route the onload function on main body to draw in account username (to
+* be rendered within h2 element). The next step will be to wire in the Dashboard connected to '/v1/dats/',
+* logout connected to '/v1/accounts/logout', and pin dat connected to '/v1/dats/add'
+*/
+
 const html = require('choo/html')
-
-module.exports = navTop
-
-function navTop(state, emit) {
-  return html `
-      <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PSA Pinning Service</a>
-
-      <ul class="navbar-nav px-3">
-        <li class="nav-item text-nowrap">
-          <a class="nav-link" href="/">Sign out</a>
-        </li>
-      </ul>
-    </nav>
-  `
-}
-
-},{"choo/html":3}],33:[function(require,module,exports){
-const html = require('choo/html')
-
-const navTop = require('./components/navTop.js')
-const navSide = require('./components/navSide.js')
+const navTop = require('./navTop.js')
+const navSide = require('./navSide.js')
 
 
-module.exports = function(state) {
-  var xhr = new XMLHttpRequest()
-  var authSession = "Bearer " + state.login
-  var domain = state.hostname + '/v1/dats'
-  console.log(domain)
-
-  // xhr.open('GET', )
+module.exports = function(state, emit) {
 
   return html `
-    <body onload="${makeRequest(domain, authSession)}">
+    <body>
 
-    ${navTop(state)}
+    ${navTop(state, emit)}
 
     <div class="container-fluid">
       <div class="row">
@@ -2304,109 +2347,91 @@ module.exports = function(state) {
 
     </body>
   `
-
-  function makeRequest(url, key) {
-    xhr.onreadystatechange = responseMethod
-    xhr.open('GET', url)
-    xhr.setRequestHeader("Authorization", key)
-    xhr.send()
-  }
-
-  function responseMethod() {
-    if (xhr.readyState === 4) {
-      console.log(xhr.responseText)
-      if (xhr.status === 200) {
-        resSuccess(xhr.responseText)
-      } else {
-        resError()
-      }
-    }
-  }
-
-  function resSuccess(responseText) {
-    var response = JSON.parse(responseText)
-    var key = response.sessionToken
-    console.log(response)
-  }
-
-  function resError() {
-    console.log("Something has appeared to have gone wrong.")
-  }
 }
 
-},{"./components/navSide.js":31,"./components/navTop.js":32,"choo/html":3}],34:[function(require,module,exports){
+},{"./navSide.js":33,"./navTop.js":34,"choo/html":3}],33:[function(require,module,exports){
+const html = require('choo/html')
+
+module.exports = navSide
+
+function navSide(state) {
+  return html `
+      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+        <div class="sidebar-sticky">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="/dash">
+                <span data-feather="home"></span>
+                Dashboard <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dash/account">
+                <span data-feather="file"></span>
+                Account
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dash/pin">
+                <span data-feather="shopping-cart"></span>
+                Pin Dat
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+  `
+}
+
+},{"choo/html":3}],34:[function(require,module,exports){
 const html = require('choo/html')
 
 module.exports = function(state, emit) {
 
   var xhr = new XMLHttpRequest()
+  var authSession = state.login
+  var domain = state.hostname + '/v1/accounts/logout'
+  emit('logout')
 
   return html `
-    <body class="text-center">
-      <form class="form-signin" onsubmit=${handleEvent}>
-        <img class="mb-4" src="../assets/icon.png" alt="" width="72" height="72">
-        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-
-        <label for="PSAdomain" class="sr-only">Domain</label>
-        <input name="domain" value="http://localhost:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
-
-        <label for="userName" class="sr-only">User Name</label>
-        <input name="username" value="oliv" id="userName" class="form-control" placeholder="User Name" required>
-
-        <label for="inputPassword" class="sr-only">Password</label>
-        <input type="password" name="password" value="toor" id="inputPassword" class="form-control" placeholder="Password" required>
-
-        <!--<a href="/dash">--><button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button><!--</a>-->
-        <p class="mt-5 mb-3 text-muted">Copyright Agorama 2018</p>
-      </form>
-    </body>
+      <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PSA Pinning Service</a>
+      <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+      <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" onclick="${handleEvent}" href="#">Sign out</a>
+        </li>
+      </ul>e
+    </nav>
   `
 
-   function handleEvent(event) {
-      event.preventDefault()
-      var baseDomain = event.target.domain.value
-      emit('hostname', baseDomain)
-      var domain = event.target.domain.value + '/v1/accounts/login'
-      var psa = event.target.domain.value + '/.well-known/psa'
-      var login = JSON.stringify({
-          username: event.target.username.value,
-          password: event.target.password.value
-        }, null, 2)
+  function handleEvent(event) {
+    makeRequest(domain, authSession)
+  }
 
-      console.log(login)
-      makeRequest(domain, login)
-   }
+  function makeRequest(url, key) {
+    xhr.onreadystatechange = responseMethod
+    xhr.open('POST', url)
+    xhr.setRequestHeader("Authorization", key)
+    xhr.send()
+  }
 
-   function makeRequest(url, form) {
-     xhr.onreadystatechange = responseMethod
-     xhr.open('POST', url)
-     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
-     xhr.send(form)
-   }
+  function responseMethod() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+        resSuccess()
+      } else {
+        resError()
+      }
+  }
 
-   function responseMethod() {
-     if (xhr.readyState === 4) {
-       console.log(xhr.responseText)
-       if (xhr.status === 200) {
-         resSuccess(xhr.responseText)
-       } else {
-         resError()
-       }
-     }
-   }
+  function resSuccess() {
+    console.log("Logout seccussfully")
 
-   function resSuccess(responseText) {
-     var response = JSON.parse(responseText)
-     var key = response.sessionToken
-     console.log(response)
-     console.log(response.sessionToken)
-     emit('key', response.sessionToken)
-   }
+  }
 
-   function resError() {
-     console.log("Something has appeared to have gone wrong.")
-   }
-
+  function resError() {
+    console.log("Something has appeared to have gone wrong.")
+  }
 }
 
 },{"choo/html":3}],35:[function(require,module,exports){
