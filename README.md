@@ -11,3 +11,6 @@ Usage:
 * You will not be able to see the immediate update of your server's holdings till you logout and log back in.
 
 @Note: this UI was specifically made to work with a CORS enabled version of homebase, which you can find [here](https://github.com/agoramaHub/homebase-cors). It is possible to make this UI work on a normal version of Homebase, however, you will have to pin this UI as its own Dat to your homebase.yml config manually and give it a subdomain that corresponds to the domain of the WebAPI URL.
+
+You can also see a working version of this client through this dat url:
+dat://c404ac66ee22b883b09950d6dd12569485d2e4e161a7ba7cecd1d73ba7927012/
