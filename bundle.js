@@ -13,37 +13,52 @@ const app = choo()
 var xhr = new XMLHttpRequest()
 
 app.use(function(state, emitter) {
+  state.auth = false
   state.login =
   state.hostname =
   state.serverName =
+  state.accOverview =
+  state.views =
 
+// Login and primary req and res information //
   emitter.on('hostname', function(data) {
     state.hostname = data
 
     emitter.on('key', function(data) {
       state.login = 'Bearer ' + data
+      state.auth = true
+      emitter.emit('render')
 
-      emitter.emit('pushState', '/main')
+      emitter.on('serverName', function(data) {
+        state.serverName = data
+
+        emitter.on('accOverview', function(data) {
+          state.accOverview = data
+
+          emitter.emit('pushState', '/main')
+        })
+      })
     })
   })
+// END //
 
-  emitter.on('serverName', function(data) {
-    state.serverName = data
-    console.log(state.serverName)
+  emitter.on('update', function(data) {
+    state.accOverview = data
     emitter.emit('render')
   })
 
+// Logout //
   emitter.on('logout', function() {
     state.login =
     state.hostname =
     state.serverName =
     emitter.emit('pushState', '/')
   })
+// END //
 })
 
 app.route('/', login)
 app.route('/main', main)
-
 
 app.mount('body')
 
@@ -2202,6 +2217,14 @@ function extend(target) {
 }
 
 },{}],31:[function(require,module,exports){
+/*
+* Currently this application is login and out correctly, however I have been running into
+* problems with trying to get a simple username out of the API without crashing the whole thing.....
+* What I am now thinking is that I will have to nest an additional request with the login, meaning
+* once the user has logged in the AJAX request will make another call for the account username.
+* The problem is that this will require the whole first request to be re-written....
+*/
+
 const html = require('choo/html')
 
 module.exports = function(state, emit) {
@@ -2215,13 +2238,13 @@ module.exports = function(state, emit) {
         <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
 
         <label for="PSAdomain" class="sr-only">Domain</label>
-        <input name="domain" value="http://localhost:8080" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
+        <input name="domain" id="PSAdomain" class="form-control" placeholder="PSA Domain" required autofocus>
 
         <label for="userName" class="sr-only">User Name</label>
-        <input name="username" value="oliv" id="userName" class="form-control" placeholder="User Name" required>
+        <input name="username" id="userName" class="form-control" placeholder="User Name" required>
 
         <label for="inputPassword" class="sr-only">Password</label>
-        <input type="password" name="password" value="toor" id="inputPassword" class="form-control" placeholder="Password" required>
+        <input type="password" name="password" id="inputPassword" class="form-control" placeholder="Password" required>
 
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
         <p class="mt-5 mb-3 text-muted">Copyright Agorama 2018</p>
@@ -2235,15 +2258,25 @@ module.exports = function(state, emit) {
       emit('hostname', baseDomain)
       var account = event.target.domain.value + '/v1/accounts/account'
       var domain = event.target.domain.value + '/v1/accounts/login'
-      var psa = event.target.domain.value + '/.well-known/psa'
+      var datOverview = event.target.domain.value + '/v1/dats'
       var login = JSON.stringify({
           username: event.target.username.value,
           password: event.target.password.value
         }, null, 2)
 
       makeRequest(domain, login)
+      setTimeout(function() {
+        if (state.auth) {
+          var authSession = state.login
+          accountRequest(account, authSession)
+        }
+        setTimeout(function() {
+            datRequest(datOverview, authSession)
+        }, 100)
+      }, 100)
    }
 
+// Login AJAX req/res functions
    function makeRequest(url, form) {
      xhr.onreadystatechange = responseMethod
      xhr.open('POST', url)
@@ -2265,31 +2298,72 @@ module.exports = function(state, emit) {
      emit('key', response.sessionToken)
    }
 
+// Account AJAX req/res functions
+   function accountRequest(url, auth) {
+     xhr.onreadystatechange = accountResponse
+     xhr.open('GET', url)
+     xhr.setRequestHeader("Authorization", auth)
+     xhr.send()
+   }
+
+   function accountResponse() {
+     if (xhr.readyState === 4 && xhr.status === 200) {
+         accInfo(xhr.responseText)
+       } else {
+         resError()
+       }
+   }
+
+   function accInfo(responseText) {
+     var response = JSON.parse(responseText)
+
+     emit('serverName', response.username)
+   }
+
+// Dats Overview AJAX response
+  function datRequest(url, auth) {
+    xhr.onreadystatechange = datResponse
+    xhr.open('GET', url)
+    xhr.setRequestHeader("Authorization", auth)
+    xhr.send()
+  }
+
+  function datResponse() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+        accOverview(xhr.responseText)
+      } else {
+        resError()
+      }
+  }
+
+  function accOverview(responseText) {
+    var response = JSON.parse(responseText)
+    emit('accOverview', response)
+  }
+
+// Universal Error function
    function resError() {
      console.log("Something has appeared to have gone wrong.")
    }
-
 }
 
 },{"choo/html":3}],32:[function(require,module,exports){
-/*
-* Current state of though is to turn main into a statemachine that generate the requested content within
-* main anchour tags. This is mean that the user is only on two pages technically: login and main. The rest
-* are state renders after an AJAX request from the pinning service logged into.
-* The main problem currently right now for the dash section is that the request functions are being fired
-* Automatically when the page is rendered.
-* CURRENT ACTION: research the autofiring of onclick events on front end systems like React (and by consequence
-* Choo js). Once fixed, second step is to route the onload function on main body to draw in account username (to
-* be rendered within h2 element). The next step will be to wire in the Dashboard connected to '/v1/dats/',
-* logout connected to '/v1/accounts/logout', and pin dat connected to '/v1/dats/add'
-*/
-
 const html = require('choo/html')
 const navTop = require('./navTop.js')
 const navSide = require('./navSide.js')
 
+// // Components inclusion //
+// var intro = require('./components/intro')
+// var account = require('./components/account')
+// var pinDat = require('./components/pinDat')
 
 module.exports = function(state, emit) {
+
+  var xhr = new XMLHttpRequest()
+  var authSession = state.login
+  var domain = state.hostname
+  var service = state.serverName
+  var datArchive = state.accOverview.items
 
   return html `
     <body>
@@ -2299,42 +2373,48 @@ module.exports = function(state, emit) {
     <div class="container-fluid">
       <div class="row">
 
-        ${navSide(state)}
+        ${navSide(state, emit)}
 
 <!-- Main -->
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-
-        <h2>Dashboard Overview</h2>
-        <div class="table-responsive">
-          <table class="table table-striped table-sm">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Header</th>
-                <th>Header</th>
-                <th>Header</th>
-                <th>Header</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1,001</td>
-                <td>Lorem</td>
-                <td>ipsum</td>
-                <td>dolor</td>
-                <td>sit</td>
-              </tr>
-              <tr>
-                <td>1,002</td>
-                <td>amet</td>
-                <td>consectetur</td>
-                <td>adipiscing</td>
-                <td>elit</td>
-              </tr>
-
-            </tbody>
-          </table>
+          <!--intro-->
+          <hr>
+          <div>
+            <h2>${service} Dashboard Overview</h2>
+            <div class="table-responsive">
+              <p>
+              This is a prototype UI interface that uses the PSA API guidelines to connect with the
+              Homebase Dat pinning server.
+              </p>
+            </div>
           </div>
+          <br>
+          <!--acc-->
+          <div>
+            <h2>Account Information</h2>
+            <div class="table-responsive">
+              <p>
+                Number of Pinned dat Archives: ${datArchive.length}
+              </p>
+              <pre>
+                ${JSON.stringify(datArchive, null, 2)}
+              </pre>
+            </div>
+          </div>
+          <br>
+          <!--pin-->
+          <div>
+            <h2>Pin New Dat Archive</h2>
+            <form onsubmit=${handleEvent}>
+              <div class="form-group">
+                <input type="text" name="dathash" class="form-control mb-1" id="url" placeholder="Dat Public Hash">
+
+                <input type="text" name="daturl" class="form-control mb-1" id="domain" placeholder="Dat Domain Placeholder">
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">Pin Dat</button>
+            </form>
+          </div>
+
         </main>
 <!-- /Main -->
 
@@ -2347,6 +2427,80 @@ module.exports = function(state, emit) {
 
     </body>
   `
+// handleEvent functionality //
+  function handleEvent(event) {
+    event.preventDefault()
+
+    // Testing....
+    var datHash = event.target.dathash.value
+    var maskURL = event.target.daturl.value
+    console.log(datHash)
+    console.log(maskURL)
+
+    // Create correct API end points for req
+    var pinDat = domain + '/v1/dats/add'
+    var updateOverview = domain = 'v1/dats'
+
+    // Create body text for AJAX POST request
+    var bodyText = JSON.stringify({
+      url: event.target.dathash.value,
+      domain: event.target.daturl.value
+    }, null, 2)
+
+    console.log(bodyText)
+
+    makeRequest(pinDat, bodyText, authSession)
+
+  }
+
+// request to pin Dat archive to server //
+  function makeRequest(url, form, auth) {
+    xhr.onreadystatechange = responseMethod
+    xhr.open('POST', url)
+    xhr.setRequestHeader("Authorization", auth)
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8")
+    xhr.send(form)
+  }
+
+  function responseMethod() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+        resSuccess(xhr.responseText)
+      } else {
+        resError()
+      }
+  }
+
+  function resSuccess(responseText) {
+    console.log("Dat archive has been successfully pinned.")
+    // emit('pinned')
+  }
+
+// Update /account page archive info //
+  function updateRequest(url, auth) {
+    xhr.onreadystatechange = updateResponse
+    xhr.open('GET', url)
+    xhr.setRequestHeader("Authorization", auth)
+    xhr.send()
+  }
+
+  function updateResponse() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+        updateSuccess(xhr.responseText)
+      } else {
+        resError()
+      }
+  }
+
+  function updateSuccess(responseText) {
+    var response = JSON.parse(responseText)
+
+    emit('update', response)
+  }
+
+// Generic error function //
+  function resError() {
+    console.log("Something has appeared to have gone wrong.")
+  }
 }
 
 },{"./navSide.js":33,"./navTop.js":34,"choo/html":3}],33:[function(require,module,exports){
@@ -2354,28 +2508,31 @@ const html = require('choo/html')
 
 module.exports = navSide
 
-function navSide(state) {
+function navSide(state, emit) {
   return html `
       <nav class="col-md-2 d-none d-md-block bg-light sidebar">
         <div class="sidebar-sticky">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link active" href="/dash">
-                <span data-feather="home"></span>
-                Dashboard <span class="sr-only">(current)</span>
-              </a>
+              <span class="nav-link">
+                <button class="btn btn-link">
+                  Dashboard
+                </button>
+              </span>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/dash/account">
-                <span data-feather="file"></span>
-                Account
-              </a>
+              <span class="nav-link">
+                <button class="btn btn-link">
+                  Account
+                </button>
+              </span>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/dash/pin">
-                <span data-feather="shopping-cart"></span>
-                Pin Dat
-              </a>
+              <span class="nav-link">
+                <button class="btn btn-link">
+                  Pin Dat
+                </button>
+              </span>
             </li>
           </ul>
         </div>
@@ -2395,7 +2552,7 @@ module.exports = function(state, emit) {
 
   return html `
       <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PSA Pinning Service</a>
+      <span class="navbar-brand col-sm-3 col-md-2 mr-0">PSA Pinning Service</span>
       <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
       <ul class="navbar-nav px-3">
         <li class="nav-item text-nowrap">

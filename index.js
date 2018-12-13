@@ -12,37 +12,52 @@ const app = choo()
 var xhr = new XMLHttpRequest()
 
 app.use(function(state, emitter) {
+  state.auth = false
   state.login =
   state.hostname =
   state.serverName =
+  state.accOverview =
+  state.views =
 
+// Login and primary req and res information //
   emitter.on('hostname', function(data) {
     state.hostname = data
 
     emitter.on('key', function(data) {
       state.login = 'Bearer ' + data
+      state.auth = true
+      emitter.emit('render')
 
-      emitter.emit('pushState', '/main')
+      emitter.on('serverName', function(data) {
+        state.serverName = data
+
+        emitter.on('accOverview', function(data) {
+          state.accOverview = data
+
+          emitter.emit('pushState', '/main')
+        })
+      })
     })
   })
+// END //
 
-  emitter.on('serverName', function(data) {
-    state.serverName = data
-    console.log(state.serverName)
+  emitter.on('update', function(data) {
+    state.accOverview = data
     emitter.emit('render')
   })
 
+// Logout //
   emitter.on('logout', function() {
     state.login =
     state.hostname =
     state.serverName =
     emitter.emit('pushState', '/')
   })
+// END //
 })
 
 app.route('/', login)
 app.route('/main', main)
-
 
 app.mount('body')
 
